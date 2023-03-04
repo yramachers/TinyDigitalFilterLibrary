@@ -44,9 +44,10 @@ void DFMatched::correlate(std::vector<double> &data, std::vector<double> &result
   std::vector<double> padded = rightPadding(data, fstde.size()); // zero padding at the right for target overlap
 
   // cross correlation loops - apparently more efficient for small target on bigger data array
+  double sum = 0.0;
   for (unsigned int i=0;i<data.size();++i) {
-    double sum = 0.0;
-    for (unsigned int j=0;j<fstde.size();++j) sum += padded.at(i+j) * fstde.at(j);
+    for (unsigned int j=0;j<fstde.size();++j) 
+      sum += padded.at(i+j) * fstde.at(j);
     result.push_back(sum);
     sum = 0.0;
   }
