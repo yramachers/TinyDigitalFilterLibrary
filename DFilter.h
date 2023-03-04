@@ -1,10 +1,40 @@
 #ifndef YR_DFilter
 #define YR_DFilter
 // Filter collection library
+// Changelog, YR:
+// March 2023: add Butterworth filter
 // YR, University of Warwick 2019
 
 #include <vector>
 #include <array>
+
+class DFButterworth {
+  // Low-pass Butterworth filter, any order
+  // Follows https://github.com/adis300/filter-c
+
+ private:
+  double ftimebase = 1.e-9; // unit nano seconds
+  double flowfreq  = 0.0;
+  int    fOrder    = 2;
+
+ protected:
+
+ public:
+  DFButterworth() = default;
+  virtual   ~DFButterworth() = default;
+  std::vector<double>  Filter(std::vector<double> &record);
+
+  // setter and getter
+  void      SetSamplingTimeBase(double ff); // unit nano seconds
+
+  void      SetLowFilterFreq(double low);
+  double    GetLowFilterFreq() {return flowfreq;}
+
+  void      SetFilterOrder(int o);
+  int       GetFilterOrder() {return fOrder;}
+
+};
+
 
 class DFMatched {
 
@@ -16,8 +46,8 @@ class DFMatched {
   std::vector<double> rightPadding(std::vector<double> &record, unsigned int width);
 
  public:
-  DFMatched();
-  virtual  ~DFMatched();
+  DFMatched() = default;
+  virtual  ~DFMatched(); // clears container
   std::vector<double>   Filter(std::vector<double> &record);
 
   // setter and getter
@@ -29,20 +59,20 @@ class DFMatched {
 class DFLowRCfilter {
 
  private:
-  double ftimebase;
-  double flowfreq;
-  int   fNumberPasses;
+  double ftimebase     = 1.e-9; // unit nano seconds
+  double flowfreq      = 0.0;
+  int    fNumberPasses = 1;
   std::array<double, 2> fresponse; // fixed size
 
  protected:
 
  public:
-  DFLowRCfilter();
-  virtual   ~DFLowRCfilter();
+  DFLowRCfilter() = default;
+  virtual   ~DFLowRCfilter() = default;
   std::vector<double>  Filter(std::vector<double> &record);
 
   // setter and getter
-  void      SetSamplingTimeBase(double ff); // unit nano seconds
+  void      SetSamplingTimeBase(double ff);
 
   void      SetLowRCfilterFreq(double low);
   double    GetLowRCfilterFreq() {return flowfreq;}
@@ -55,16 +85,16 @@ class DFLowRCfilter {
 class DFHighRCfilter {
 
  private:
-  double ftimebase;
-  double fhighfreq;
-  int   fNumberPasses;
+  double ftimebase     = 1.e-9; // unit nano seconds
+  double fhighfreq     = 0.0;
+  int    fNumberPasses = 1;
   std::array<double, 3> fresponse; // fixed size
 
  protected:
 
  public:
-  DFHighRCfilter();
-  virtual   ~DFHighRCfilter();
+  DFHighRCfilter() = default;
+  virtual   ~DFHighRCfilter() = default;
   std::vector<double>  Filter(std::vector<double> &record);
 
   // setter and getter
@@ -79,15 +109,15 @@ class DFHighRCfilter {
 class DFMovingAverage {
 
  private:
-  int      fMAwidth;        // Moving Average filter width, default=5
+  int      fMAwidth = 5;        // Moving Average filter width, default=5
   double   fresponse;
 
  protected:
   std::vector<double> paddingData(std::vector<double> &record, int width);
 
  public:
-  DFMovingAverage();
-  virtual  ~DFMovingAverage();
+  DFMovingAverage() = default;
+  virtual  ~DFMovingAverage() = default;
   std::vector<double> Filter(std::vector<double> &record);
 
   // setter and getter

@@ -3,7 +3,7 @@
 
 Yorck Ramachers (Warwick)
 
-Last updated November 5, 2019
+Last updated March 4, 2023
 
 ## Description
 
@@ -38,6 +38,7 @@ ctest since it creates a ROOT output file for checking
 rather than require checks from the catch library.
 
 ## Content:
+- A Low-pass Butterworth filter object of any order.
 - A matched filter object, specialized on finding a small template in a much longer data set.
 - A moving average object - smoothing while preserving sharp features.
 - A low-pass object - classic RC filter
