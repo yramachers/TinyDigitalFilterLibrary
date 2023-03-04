@@ -3,6 +3,67 @@
 #include <cmath>
 
 
+// Low-pass Butterworth filter
+DFButterworth::~DFButterworth()
+{
+}
+
+
+DFButterworth::DFButterworth() : ftimebase(1),
+			     flowfreq(0), fFilterOrder(2)
+{
+}
+
+
+void DFButterworth::SetSamplingTimeBase(double ff)
+{
+  if (ff > 0.0) ftimebase = ff; // take only positive time base
+  else ftimebase = 1.0; // unit nano seconds
+}
+
+
+void DFButterworth::SetLowRCfilterFreq(double low)
+{
+  if (low >= 0.0) flowfreq = low; // take only positive frequencies
+  else flowfreq = 0.0;
+}
+
+
+std::vector<double> DFButterworth::Filter(std::vector<double> &record)
+{
+  std::vector<double> result;
+
+  double pi = std::acos(-1.0);
+  double fc, nyfreq, unit;
+  
+  unit = 1.0e-9; // nano seconds
+  nyfreq = 1.0 / (2.0 * ftimebase * unit);  // Nyquist frequency
+  if (flowfreq < nyfreq) // must be smaller than Nyquist frequency
+    fc = std::exp(- 2.0 * pi * flowfreq / nyfreq);
+  else 
+    fc = 0.0;           // otherwise no filtering on low frequencies
+
+  // filter coefficients
+  fresponse[0] = 1.0 - fc;
+  fresponse[1] = fc;
+
+  if (!record.empty()) {
+    
+    std::vector<double> copydata(record);  // dummy storage for the data
+    result.resize(record.size());
+    
+    result.at(0) = fresponse[0] * copydata.at(0); // fast recursive low pass
+    for (unsigned int i=1; i<record.size(); ++i) 
+      result.at(i) = fresponse[0] * copydata.at(i) + fresponse[1] * result.at(i-1);
+    }
+  }
+  else
+    std::cout << "Error data not valid in apply filter" << std::endl;
+  
+  return result;
+}
+
+
 DFMatched::~DFMatched()
 {
   fstde.clear();

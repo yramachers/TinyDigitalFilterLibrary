@@ -1,10 +1,40 @@
 #ifndef YR_DFilter
 #define YR_DFilter
 // Filter collection library
+// Changelog, YR:
+// March 2023: add Butterworth filter
 // YR, University of Warwick 2019
 
 #include <vector>
 #include <array>
+
+class DFButterworth {
+  // Low-pass Butterworth filter, any order
+
+ private:
+  double ftimebase;
+  double flowfreq;
+  int    fOrder;
+  std::array<double, 2> fresponse; // fixed size
+
+ protected:
+
+ public:
+  DFLowRCfilter();
+  virtual   ~DFLowRCfilter();
+  std::vector<double>  Filter(std::vector<double> &record);
+
+  // setter and getter
+  void      SetSamplingTimeBase(double ff); // unit nano seconds
+
+  void      SetLowRCfilterFreq(double low);
+  double    GetLowRCfilterFreq() {return flowfreq;}
+
+  void      SetFilterOrder(int npass);
+  int       GetFilterOrder() {return fOrder;}
+
+};
+
 
 class DFMatched {
 
