@@ -84,6 +84,7 @@ TH1D* testbworth(std::vector<double>& data) {
   // single pass filter is default
   lrc.SetSamplingTimeBase(1.e-3); // 1 kHz; default, 1 ns
   lrc.SetLowFilterFreq(1.0e2);  // 100 Hz
+  lrc.SetFilterOrder(14);
 
   std::vector<double> newosc = lrc.Filter(data);  
   std::cout << "Butterworth executed" << std::endl;
@@ -198,13 +199,11 @@ TH1D* testmatch(std::vector<double>& data, std::vector<double>& st) {
 
 void oscillationsource(std::vector<double> &osc) {
   int samplelength = 10000; // 10 s at 1 kHz
-  double f[4] = {25,110,150,250}; // frequencies [Hz]
+  double f[4] = {25,150}; // frequencies [Hz]
   const double tpi = 2.0*std::acos(-1.0);
   for (int i=0;i<samplelength;++i)
     osc.push_back(std::sin(tpi*f[0]*i*10/samplelength)
-		  +std::sin(tpi*f[1]*i*10/samplelength)
-		  +std::sin(tpi*f[2]*i*10/samplelength)
-		  +std::sin(tpi*f[3]*i*10/samplelength));
+		  +std::sin(tpi*f[1]*i*10/samplelength));
 }
 
 
