@@ -4,28 +4,24 @@
 
 
 // Low-pass Butterworth filter
-DFButterworth::~DFButterworth()
-{
-}
-
-
-DFButterworth::DFButterworth() : ftimebase(1),
-			     flowfreq(0), fFilterOrder(2)
-{
-}
-
-
 void DFButterworth::SetSamplingTimeBase(double ff)
 {
   if (ff > 0.0) ftimebase = ff; // take only positive time base
-  else ftimebase = 1.0; // unit nano seconds
+  else ftimebase = 1.e-9; // unit nano seconds
 }
 
 
-void DFButterworth::SetLowRCfilterFreq(double low)
+void DFButterworth::SetLowFilterFreq(double low)
 {
   if (low >= 0.0) flowfreq = low; // take only positive frequencies
   else flowfreq = 0.0;
+}
+
+
+void DFButterworth::SetFilterOrder(int o)
+{
+  if (o%2) fOrder = (o>2) ? (o + 1) : 2 ;    // Minimum order here is 2
+  else fOrder = (o>2) ? o : 2 ; // take only even orders
 }
 
 
@@ -33,28 +29,44 @@ std::vector<double> DFButterworth::Filter(std::vector<double> &record)
 {
   std::vector<double> result;
 
-  double pi = std::acos(-1.0);
-  double fc, nyfreq, unit;
-  
-  unit = 1.0e-9; // nano seconds
-  nyfreq = 1.0 / (2.0 * ftimebase * unit);  // Nyquist frequency
-  if (flowfreq < nyfreq) // must be smaller than Nyquist frequency
-    fc = std::exp(- 2.0 * pi * flowfreq / nyfreq);
-  else 
-    fc = 0.0;           // otherwise no filtering on low frequencies
+  constexpr double pi = std::acos(-1.0);
+  double nyfreq, xdata;
+  double a, a2, r, s;  // naming as in source code, see header.
+  const int n = fOrder/2;
 
-  // filter coefficients
-  fresponse[0] = 1.0 - fc;
-  fresponse[1] = fc;
+  // filter coefficients, zero initialized
+  std::vector<double> A(n), d1(n), d2(n); // naming as in source code, see header.  
+  // filter application, zero initialized
+  std::vector<double> w0(n), w1(n), w2(n); // naming as in source code, see header.
+  
+  nyfreq = 1.0 / (2.0 * ftimebase);  // Nyquist frequency
+  if (flowfreq < nyfreq) {           // must be smaller than Nyquist frequency
+    a  = std::tan(pi * flowfreq * ftimebase);
+    a2 = a*a;
+    for (int i=0;i<n; ++i) {
+      r = std::sin((2.0*i+1)/(4.0*n));
+      s = a2 + 2.0*r*a + 1.0;
+      A[i]  = a2/s;
+      d1[i] = 2.0*(1.0-a2)/s;
+      d2[i] = -(a2-2.0*a*r+1.0)/s;
+    }
+  }
+  else 
+    return result;       // empty; no filtering
 
   if (!record.empty()) {
     
-    std::vector<double> copydata(record);  // dummy storage for the data
     result.resize(record.size());
     
-    result.at(0) = fresponse[0] * copydata.at(0); // fast recursive low pass
-    for (unsigned int i=1; i<record.size(); ++i) 
-      result.at(i) = fresponse[0] * copydata.at(i) + fresponse[1] * result.at(i-1);
+    for (unsigned int i=0; i<record.size(); ++i) {
+      xdata = record.at(i);
+      for (int j=0;j<n;++j) { // for every data item, filter order loop
+	w0[j]     = d1[j]*w1[j] + d2[j]*w2[j] + xdata;
+	xdata     = A[j] * (w0[j]+2.0*w1[j]+w2[j]);
+	w2[j]     = w1[j];
+	w1[j]     = w0[j];
+      }
+      result[i] = xdata;
     }
   }
   else
@@ -67,11 +79,6 @@ std::vector<double> DFButterworth::Filter(std::vector<double> &record)
 DFMatched::~DFMatched()
 {
   fstde.clear();
-}
-
-
-DFMatched::DFMatched() : fstde(0)
-{
 }
 
 
@@ -124,21 +131,10 @@ std::vector<double> DFMatched::rightPadding(std::vector<double> &record, unsigne
 
 
 // RC Low-pass filter
-DFLowRCfilter::~DFLowRCfilter()
-{
-}
-
-
-DFLowRCfilter::DFLowRCfilter() : ftimebase(1),
-			     flowfreq(0), fNumberPasses(1)
-{
-}
-
-
 void DFLowRCfilter::SetSamplingTimeBase(double ff)
 {
   if (ff > 0.0) ftimebase = ff; // take only positive time base
-  else ftimebase = 1.0; // unit nano seconds
+  else ftimebase = 1.e-9; // unit nano seconds
 }
 
 
@@ -160,11 +156,10 @@ std::vector<double> DFLowRCfilter::Filter(std::vector<double> &record)
 {
   std::vector<double> result;
 
-  double pi = std::acos(-1.0);
-  double fc, nyfreq, unit;
+  constexpr double pi = std::acos(-1.0);
+  double fc, nyfreq;
   
-  unit = 1.0e-9; // nano seconds
-  nyfreq = 1.0 / (2.0 * ftimebase * unit);  // Nyquist frequency
+  nyfreq = 1.0 / (2.0 * ftimebase);  // Nyquist frequency
   if (flowfreq < nyfreq) // must be smaller than Nyquist frequency
     fc = std::exp(- 2.0 * pi * flowfreq / nyfreq);
   else 
@@ -195,21 +190,10 @@ std::vector<double> DFLowRCfilter::Filter(std::vector<double> &record)
 
 
 // RC High-pass filter
-DFHighRCfilter::~DFHighRCfilter()
-{
-}
-
-
-DFHighRCfilter::DFHighRCfilter() : ftimebase(1),
-			     fhighfreq(0), fNumberPasses(1)
-{
-}
-
-
 void DFHighRCfilter::SetSamplingTimeBase(double ff)
 {
   if (ff > 0.0) ftimebase = ff; // take only positive time base
-  else ftimebase = 1.0; // unit nano seconds
+  else ftimebase = 1.e-9; // unit nano seconds
 }
 
 
@@ -231,11 +215,10 @@ std::vector<double> DFHighRCfilter::Filter(std::vector<double> &record)
 {
   std::vector<double> result;
   
-  double pi = std::acos(-1.0);
-  double fc, nyfreq, unit;
+  constexpr double pi = std::acos(-1.0);
+  double fc, nyfreq;
   
-  unit = 1.0e-9; // nano seconds
-  nyfreq = 1.0 / (2.0 * ftimebase * unit);  // Nyquist frequency
+  nyfreq = 1.0 / (2.0 * ftimebase);  // Nyquist frequency
   
   if (fhighfreq < nyfreq) // must be smaller than Nyquist frequency
     fc = std::exp(- 2.0 * pi * fhighfreq / nyfreq);
@@ -268,18 +251,7 @@ std::vector<double> DFHighRCfilter::Filter(std::vector<double> &record)
 }
 
 
-
-DFMovingAverage::~DFMovingAverage()
-{
-}
-
-
-DFMovingAverage::DFMovingAverage() : fMAwidth(5),
-				     fresponse(0.0)
-{
-}
-
-
+// Moving average filter
 void DFMovingAverage::SetMovingAverageWidth(int width)
 {
   if (width%2) fMAwidth = (width>3) ? width : 3 ;    // Minimum width here is 3
