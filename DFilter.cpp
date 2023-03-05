@@ -44,7 +44,7 @@ std::vector<double> DFButterworth::Filter(std::vector<double> &record)
     a  = std::tan(pi * flowfreq * ftimebase);
     a2 = a*a;
     for (int i=0;i<n; ++i) {
-      r = std::sin((2.0*i+1)/(4.0*n));
+      r = std::sin(pi*(2.0*i+1)/(4.0*n));
       s = a2 + 2.0*r*a + 1.0;
       A[i]  = a2/s;
       d1[i] = 2.0*(1.0-a2)/s;
